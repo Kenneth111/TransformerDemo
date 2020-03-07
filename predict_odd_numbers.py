@@ -38,21 +38,23 @@ def validation(model, criterion, loader):
     return epoch_loss / len(loader)
 
 
-def test(model, max_len=3):
-    s = random.randint(1, 4998)
+def test(model, max_len=3, test_times=1):
     model = model.cuda()
     model.eval()
     with no_grad():
-        src = [(s + j) * 2 for j in range(max_len)]
-        src = LongTensor(src).unsqueeze(1).cuda()
-        tgt = [0] + [(s + j) * 2 + 1 for j in range(max_len)]
-        pred = [0]
-        for j in range(max_len):
-            inp = LongTensor(pred).unsqueeze(1).cuda()
-            output = model(src, inp)
-            out_num = output.argmax(2)[-1].item()
-            pred.append(out_num)
-        print(tgt, pred)
+        for i in range(test_times):
+            s = random.randint(1, 4998)
+            src = [(s + j) * 2 for j in range(max_len)]
+            src = LongTensor(src).unsqueeze(1).cuda()
+            tgt = [0] + [(s + j) * 2 + 1 for j in range(max_len)]
+            pred = [0]
+            for j in range(max_len):
+                inp = LongTensor(pred).unsqueeze(1).cuda()
+                output = model(src, inp)
+                out_num = output.argmax(2)[-1].item()
+                pred.append(out_num)
+            print("target: ", tgt)
+            print("predict: ", pred)
 
 
 def main():
@@ -83,4 +85,4 @@ if __name__ == "__main__":
     # main()
     model = TransformerModel(10000, 10000, hidden=64)
     model.load_state_dict(load("model_3.92918.pt"))
-    test(model)
+    test(model, test_times=10)
