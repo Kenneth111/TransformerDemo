@@ -10,7 +10,7 @@ class NumberLoader(Dataset):
         self.y = [[y[i + j] for j in range(out_len)] for i in range(len(y) - out_len + 1)]
 
     def __getitem__(self, index):
-        return LongTensor(self.x[index]), LongTensor(self.y[index])
+        return LongTensor(self.x[index]), LongTensor([0] + self.y[index])
 
     def __len__(self):
         return len(self.x)

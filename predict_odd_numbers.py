@@ -1,5 +1,5 @@
-from numpy import arange
-from torch import save, no_grad
+from numpy import arange, random
+from torch import save, load, no_grad, LongTensor
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, random_split
@@ -14,9 +14,9 @@ def train(model, criterion, optimizer, loader):
         src, tgt = batch
         src, tgt = src.transpose(1, 0).cuda(), tgt.transpose(1, 0).cuda()
         optimizer.zero_grad()
-        output = model(src, tgt)
+        output = model(src, tgt[:-1, :])
         n = output.shape[-1]
-        loss = criterion(output.reshape(-1, n), tgt.reshape(-1))
+        loss = criterion(output.reshape(-1, n), tgt[1:, :].reshape(-1))
         loss.backward()
         nn.utils.clip_grad_norm_(model.parameters(), 1.0)
         optimizer.step()
@@ -31,11 +31,27 @@ def validation(model, criterion, loader):
         for i, batch in enumerate(loader):
             src, tgt = batch
             src, tgt = src.transpose(1, 0).cuda(), tgt.transpose(1, 0).cuda()
-            output = model(src, tgt)
+            output = model(src, tgt[:-1, :])
             n = output.shape[-1]
-            loss = criterion(output.reshape(-1, n), tgt.reshape(-1))
+            loss = criterion(output.reshape(-1, n), tgt[1:, :].reshape(-1))
             epoch_loss += loss.item()
     return epoch_loss / len(loader)
+
+
+def test(model, max_len=3):
+    model = model.cuda()
+    model.eval()
+    with no_grad():
+        src = [2, 4, 6]
+        src = LongTensor(src).unsqueeze(1).cuda()
+        tgt = [0, 3, 5, 7]
+        pred = [0]
+        for j in range(max_len):
+            inp = LongTensor(pred).unsqueeze(1).cuda()
+            output = model(src, inp)
+            out_num = output.argmax(2)[-1].item()
+            pred.append(out_num)
+        print(tgt, pred)
 
 
 def main():
@@ -63,4 +79,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    # main()
+    model = TransformerModel(10000, 10000, hidden=64)
+    model.load_state_dict(load("model.pt"))
+    test(model)
