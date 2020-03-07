@@ -1,3 +1,4 @@
+import argparse
 from numpy import arange, random
 from torch import save, load, no_grad, LongTensor
 import torch.nn as nn
@@ -73,16 +74,28 @@ def main():
     model = model.cuda()
     optimizer = optim.Adam(model.parameters())
     criterion = nn.CrossEntropyLoss()
+    best_loss = 100
+    best_model = None
     for i in range(epochs):
         epoch_loss = train(model, criterion, optimizer, train_loader)
         epoch_loss_val = validation(model, criterion, val_loader)
-        print("train loss:", i, epoch_loss)
-        print("val loss:", i, epoch_loss_val)
-    save(model.state_dict(), "model_{0:.5f}.pt".format(epoch_loss_val))
+        print("epoch: {} train loss: {}".format(i, epoch_loss))
+        print("epoch: {} val loss: {}".format(i, epoch_loss_val))
+        if epoch_loss_val < best_loss:
+            best_loss = epoch_loss_val
+            model_name = "model/model_{0:.5f}.pt".format(epoch_loss_val)
+            save(model.state_dict(), model_name)
+    return model_name
 
 
 if __name__ == "__main__":
-    # main()
+    parser = argparse.ArgumentParser(description='A PyTorch Transformer Language Model for Predicting Odd Numbers')
+    parser.add_argument('--test_model', type=str, help='the model file to load')
+    args = parser.parse_args()
+    if args.test_model is None:
+        model_name = main()
+    else:
+        model_name = args.test_model
     model = TransformerModel(10000, 10000, hidden=64)
-    model.load_state_dict(load("model_3.92918.pt"))
+    model.load_state_dict(load(model_name))
     test(model, test_times=10)
