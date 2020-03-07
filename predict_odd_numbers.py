@@ -39,12 +39,13 @@ def validation(model, criterion, loader):
 
 
 def test(model, max_len=3):
+    s = random.randint(1, 4998)
     model = model.cuda()
     model.eval()
     with no_grad():
-        src = [2, 4, 6]
+        src = [(s + j) * 2 for j in range(max_len)]
         src = LongTensor(src).unsqueeze(1).cuda()
-        tgt = [0, 3, 5, 7]
+        tgt = [0] + [(s + j) * 2 + 1 for j in range(max_len)]
         pred = [0]
         for j in range(max_len):
             inp = LongTensor(pred).unsqueeze(1).cuda()
@@ -59,7 +60,7 @@ def main():
     inp = arange(2, voc_size, 2)
     tgt = arange(3, voc_size, 2)
     batch_size = 32
-    epochs = 20
+    epochs = 30
     dataset = NumberLoader(inp, tgt)
     train_len = int(len(dataset) * 0.8)
     val_len = len(dataset) - train_len
@@ -75,11 +76,11 @@ def main():
         epoch_loss_val = validation(model, criterion, val_loader)
         print("train loss:", i, epoch_loss)
         print("val loss:", i, epoch_loss_val)
-    save(model.state_dict(), "model.pt")
+    save(model.state_dict(), "model_{0:.5f}.pt".format(epoch_loss_val))
 
 
 if __name__ == "__main__":
     # main()
     model = TransformerModel(10000, 10000, hidden=64)
-    model.load_state_dict(load("model.pt"))
+    model.load_state_dict(load("model_3.92918.pt"))
     test(model)
