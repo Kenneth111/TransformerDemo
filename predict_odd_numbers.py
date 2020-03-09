@@ -75,7 +75,6 @@ def main():
     optimizer = optim.Adam(model.parameters())
     criterion = nn.CrossEntropyLoss()
     best_loss = 100
-    best_model = None
     for i in range(epochs):
         epoch_loss = train(model, criterion, optimizer, train_loader)
         epoch_loss_val = validation(model, criterion, val_loader)
