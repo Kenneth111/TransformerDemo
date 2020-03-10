@@ -63,10 +63,10 @@ def main(model_name=None):
     voc_size = 10000
     inp = arange(2, voc_size, 2)
     tgt = arange(3, voc_size, 2)
-    batch_size = 32
-    epochs = 1
+    batch_size = 128
+    epochs = 40
     dataset = NumberLoader(inp, tgt)
-    train_len = int(len(dataset) * 0.8)
+    train_len = int(len(dataset) * 0.9)
     val_len = len(dataset) - train_len
     train_set, val_set = random_split(dataset, [train_len, val_len])
     train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True, num_workers=1)
