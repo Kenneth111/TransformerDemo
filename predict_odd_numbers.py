@@ -59,19 +59,19 @@ def test(model, max_len=3, test_times=1):
             print("predict: ", pred)
 
 
-def main(model_name=None):
+def main(model_name=None, hidden=64, nlayers=1):
     voc_size = 10000
     inp = arange(2, voc_size, 2)
     tgt = arange(3, voc_size, 2)
     batch_size = 128
-    epochs = 40
+    epochs = 30
     dataset = NumberLoader(inp, tgt)
     train_len = int(len(dataset) * 0.9)
     val_len = len(dataset) - train_len
     train_set, val_set = random_split(dataset, [train_len, val_len])
     train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True, num_workers=1)
     val_loader = DataLoader(val_set, batch_size=batch_size, shuffle=True, num_workers=1)
-    model = TransformerModel(voc_size, voc_size, hidden=128, nlayers=2)
+    model = TransformerModel(voc_size, voc_size, hidden=hidden, nlayers=nlayers)
     if model_name is not None:
         model.load_state_dict(load(model_name))
     model = model.cuda()
@@ -98,13 +98,15 @@ if __name__ == "__main__":
     parser.add_argument('--test_model', type=str, help='the model file to load')
     parser.add_argument('--train_model', type=str, help='the model file to load')
     args = parser.parse_args()
+    hidden = 128
+    nlayers = 2
     if args.test_model is None:
         if args.train_model is not None:
-            model_name = main(args.train_model)
+            model_name = main(args.train_model, hidden=hidden, nlayers=nlayers)
         else:
-            model_name = main()
+            model_name = main(hidden=hidden, nlayers=nlayers)
     else:
         model_name = args.test_model
-    model = TransformerModel(10000, 10000, hidden=128, nlayers=2)
+    model = TransformerModel(10000, 10000, hidden=hidden, nlayers=nlayers)
     model.load_state_dict(load(model_name))
     test(model, test_times=10)
