@@ -71,7 +71,7 @@ def main(model_name=None):
     train_set, val_set = random_split(dataset, [train_len, val_len])
     train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True, num_workers=1)
     val_loader = DataLoader(val_set, batch_size=batch_size, shuffle=True, num_workers=1)
-    model = TransformerModel(voc_size, voc_size, hidden=64, nlayers=1)
+    model = TransformerModel(voc_size, voc_size, hidden=128, nlayers=2)
     if model_name is not None:
         model.load_state_dict(load(model_name))
     model = model.cuda()
@@ -105,6 +105,6 @@ if __name__ == "__main__":
             model_name = main()
     else:
         model_name = args.test_model
-    model = TransformerModel(10000, 10000, hidden=64, nlayers=1)
+    model = TransformerModel(10000, 10000, hidden=128, nlayers=2)
     model.load_state_dict(load(model_name))
     test(model, test_times=10)
