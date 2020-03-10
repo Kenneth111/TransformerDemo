@@ -45,8 +45,8 @@ def test(model, max_len=3, test_times=1):
     with no_grad():
         for i in range(test_times):
             s = random.randint(1, 4998)
-            src = [(s + j) * 2 for j in range(max_len)]
-            src = LongTensor(src).unsqueeze(1).cuda()
+            cpu_src = [(s + j) * 2 for j in range(max_len)]
+            src = LongTensor(cpu_src).unsqueeze(1).cuda()
             tgt = [0] + [(s + j) * 2 + 1 for j in range(max_len)]
             pred = [0]
             for j in range(max_len):
@@ -54,30 +54,36 @@ def test(model, max_len=3, test_times=1):
                 output = model(src, inp)
                 out_num = output.argmax(2)[-1].item()
                 pred.append(out_num)
+            print("input: ", cpu_src)
             print("target: ", tgt)
             print("predict: ", pred)
 
 
-def main():
+def main(model_name=None):
     voc_size = 10000
     inp = arange(2, voc_size, 2)
     tgt = arange(3, voc_size, 2)
     batch_size = 32
-    epochs = 30
+    epochs = 1
     dataset = NumberLoader(inp, tgt)
     train_len = int(len(dataset) * 0.8)
     val_len = len(dataset) - train_len
     train_set, val_set = random_split(dataset, [train_len, val_len])
     train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True, num_workers=1)
     val_loader = DataLoader(val_set, batch_size=batch_size, shuffle=True, num_workers=1)
-    model = TransformerModel(voc_size, voc_size, hidden=64)
+    model = TransformerModel(voc_size, voc_size, hidden=64, nlayers=1)
+    if model_name is not None:
+        model.load_state_dict(load(model_name))
     model = model.cuda()
+    # optimizer = optim.SGD(model.parameters(), lr=0.5)
     optimizer = optim.Adam(model.parameters())
+    # scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.5)
     criterion = nn.CrossEntropyLoss()
     best_loss = 100
     for i in range(epochs):
         epoch_loss = train(model, criterion, optimizer, train_loader)
         epoch_loss_val = validation(model, criterion, val_loader)
+        # scheduler.step()
         print("epoch: {} train loss: {}".format(i, epoch_loss))
         print("epoch: {} val loss: {}".format(i, epoch_loss_val))
         if epoch_loss_val < best_loss:
@@ -90,11 +96,15 @@ def main():
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='A PyTorch Transformer Language Model for Predicting Odd Numbers')
     parser.add_argument('--test_model', type=str, help='the model file to load')
+    parser.add_argument('--train_model', type=str, help='the model file to load')
     args = parser.parse_args()
     if args.test_model is None:
-        model_name = main()
+        if args.train_model is not None:
+            model_name = main(args.train_model)
+        else:
+            model_name = main()
     else:
         model_name = args.test_model
-    model = TransformerModel(10000, 10000, hidden=64)
+    model = TransformerModel(10000, 10000, hidden=64, nlayers=1)
     model.load_state_dict(load(model_name))
     test(model, test_times=10)
